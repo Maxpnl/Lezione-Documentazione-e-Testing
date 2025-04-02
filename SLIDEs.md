@@ -220,6 +220,17 @@ def shutdown(self) -> None:
 ```
 
 ---
+# Recap esempio
+- **Classe FrenchFryFryer**:
+  - Gestisce il processo di frittura delle patatine
+  - Controlla lo stato della friggitrice e le operazioni da eseguire
+- **Metodi principali**:
+  - `heat_oil`: Riscalda l'olio fino alla temperatura target
+  - `load_potatoes`: Carica le patatine nella friggitrice
+  - `fry`: Frigge le patatine per un tempo specificato
+  - `remove_fries`: Rimuove le patatine fritte dalla friggitrice
+  - `shutdown`: Spegne la friggitrice
+---
 
 # Cosa possiamo testare?
 
@@ -286,6 +297,12 @@ class TestFrenchFryFryer(unittest.TestCase):
         
         # Verifiche
         self.assertFalse(self.fryer.is_heating)
+```
+---
+# Unit test per shutdown
+## Far partire il test
+```bash
+python -m unittest test_unit.py
 ```
 ---
 # Mocking
@@ -512,7 +529,7 @@ def test_cook_french_fries_success(self, mock_shutdown, mock_remove, mock_fry, m
 - Scrivere codice modulare e riutilizzabile
 - Scrivere codice che non dipenda da altri sistemi
 - Limitare le funzioni con side effects e la loro dimensione
-- Usare mocking e stub per simulare il comportamento di altri sistemi
+- Usare i mock per simulare il comportamento di altri sistemi
 ---
 ## Scrivere codice testabile
 
@@ -607,7 +624,7 @@ def calcola_sconto_cliente_testabile(id_cliente,
 ---
 # Come vengono eseguiti i test nel mondo reale?
 ## La Continuous Integration
-- La **Continuos Integration** (o CI) è un processo che permette di automatizzare il rilascio del software, strettamente legato al controllo di versione (Git)
+- La **Continuous Integration** (detta anche CI) è un processo che permette di automatizzare il rilascio del software, strettamente legato al controllo di versione (Git)
 - In base al provider (GitHub, GitLab, Bitbucket, ecc.) ci sono strumenti diversi per la CI
 - In GitHub ad esempio si usano le **GitHub Actions**, che permettono di eseguire script in risposta a eventi (push, pull request, ecc.)
 ---
