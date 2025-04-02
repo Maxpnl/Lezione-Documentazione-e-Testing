@@ -14,7 +14,7 @@ marp: true
 ---
 
 # Cosa è il Testing del software
-
+Testare un software significa verificare che funzioni come previsto e che soddisfi i requisiti richiesti, in particolare tramite la scrittura di test automatici.
 ### Perchè è importante
 
 - Aumenta la sicurezza dello sviluppatore nei confronti di nuove implementazioni o modifiche al codice
@@ -507,9 +507,95 @@ def test_cook_french_fries_success(self, mock_shutdown, mock_remove, mock_fry, m
   - Cypress per le interfacce utente
   - Postman per le API (la maggior parte dei framework e linguaggi hanno il loro modo di fare e2e test)
 ---
+# Scrivere codice testabile
+- **Separazione delle responsabilità**
+- Scrivere codice modulare e riutilizzabile
+- Scrivere codice che non dipenda da altri sistemi
+- Limitare le funzioni con side effects e la loro dimensione
+- Usare mocking e stub per simulare il comportamento di altri sistemi
+---
+## Scrivere codice testabile
+
+```python
+# Difficilmente testabile!
+def calcola_sconto_cliente(id_cliente):
+    # Connessione diretta al database
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    
+    # Query per ottenere lo storico acquisti
+    cursor.execute("SELECT SUM(importo) FROM ordini WHERE id_cliente = ? AND data > ?", 
+                  (id_cliente, datetime.now() - timedelta(days=365)))
+    totale_annuale = cursor.fetchone()[0] or 0
+    
+    # Logica di business mescolata con accesso ai dati
+    if totale_annuale > 10000:
+        sconto = 0.20  # 20% di sconto
+    elif totale_annuale > 5000:
+        sconto = 0.10  # 10% di sconto
+    elif totale_annuale > 1000:
+        sconto = 0.05  # 5% di sconto
+    else:
+        sconto = 0
+        
+    conn.close()
+    return sconto
+```
+---
+# Perchè è difficile testarlo?
+- Contiene accesso diretto al database
+- Usa la data corrente (non deterministica)
+- Mescola recupero dati e logica di business in un'unica funzione
+---
+## Come spezzare il codice in funzioni testabili?
+```python
+# 1. Funzione pura che calcola lo sconto (facilmente testabile)
+def calcola_percentuale_sconto(totale_annuale):
+    """Calcola la percentuale di sconto basata sul totale degli acquisti."""
+    if totale_annuale > 10000:
+        return 0.20  # 20% di sconto
+    elif totale_annuale > 5000:
+        return 0.10  # 10% di sconto
+    elif totale_annuale > 1000:
+        return 0.05  # 5% di sconto
+    else:
+        return 0
+
+# 2. Funzione che ottiene il totale annuale (testabile con mock del database)
+def get_totale_acquisti_annuali(conn, id_cliente, data_riferimento):
+    """Recupera il totale degli acquisti dell'ultimo anno per un cliente."""
+    data_inizio = data_riferimento - timedelta(days=365)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT SUM(importo) FROM ordini WHERE id_cliente = ? AND data > ?", 
+        (id_cliente, data_inizio)
+    )
+    totale = cursor.fetchone()[0]
+    return totale or 0
+```
+---
+## Come spezzare il codice in funzioni testabili?
+```python
+# 3. Funzione principale che coordina le altre (testabile con dependency injection)
+def calcola_sconto_cliente_testabile(id_cliente, 
+                                    db_connector=sqlite3.connect, 
+                                    data_riferimento=None):
+    """Calcola lo sconto per un cliente specifico."""
+    if data_riferimento is None:
+        data_riferimento = datetime.now()
+        
+    conn = db_connector('database.db')
+    try:
+        totale = get_totale_acquisti_annuali(conn, id_cliente, data_riferimento)
+        sconto = calcola_percentuale_sconto(totale)
+        return sconto
+    finally:
+        conn.close()
+```
+---
 # Cosa devo testare?
 - In base al progetto, alla sua complessità e alla sua importanza posso individuare quali funzioni testare
-- Non è necessario testare ogni singola funzione o casistica, ma è importante testare le parti più critiche e che più probabilmente saranno soggette a modifiche (implementative)
+- Non è necessario testare ogni singola funzione o casistica, ma è importante testare le parti più critiche e che più probabilmente saranno soggette a modifiche
 - Le dinamiche di impresa influiscono su questo aspetto, il tempo da dedicare al testing viene spesso ridotto a favore di nuove funzionalità
 - In contesti collaborativi diventa più importante, il testing permette di evitare che modifiche al codice di un collega possano rompere il mio
 - È importante anche per facilitare futuri cambiamenti al codice, il testing permette di avere una base solida su cui lavorare
@@ -517,8 +603,17 @@ def test_cook_french_fries_success(self, mock_shutdown, mock_remove, mock_fry, m
 # Cosa devo testare?
 - Nel caso di una friggitrice è importante che non continui a scaldare l'olio se non serve in quanto è pericoloso
 - Può essere inoltre utile scrivere qualche integration test per verificare che il processo di frittura funzioni correttamente
-- Anche la funzione heat_oil è un buon candidato per uno unit test, in quanto è una funzione critica e complessa per il funzionamento della friggitrice
+- Anche la funzione heat_oil è un buon candidato per degli unit test, in quanto è una funzione critica e complessa
 ---
-# Cosa devo evitare?
-- Non bisogna usare il **test coverage** (_quantità di codice testato_) come un obiettivo
-- Scrivere i test è un investimento sul futuro, ma ha un costo iniziale derivato dal tempo necessario per scriverli per cui non sempre vale la pena farlo
+# Come vengono eseguiti i test nel mondo reale?
+## La Continuous Integration
+- La **Continuos Integration** (o CI) è un processo che permette di automatizzare il rilascio del software, strettamente legato al controllo di versione (Git)
+- In base al provider (GitHub, GitLab, Bitbucket, ecc.) ci sono strumenti diversi per la CI
+- In GitHub ad esempio si usano le **GitHub Actions**, che permettono di eseguire script in risposta a eventi (push, pull request, ecc.)
+---
+# Come vengono eseguiti i test nel mondo reale?
+- Le Github Actions vengono usate tipicamente per definire una Pipeline di CI strutturata nella seguente maniera:
+  - **Build**: costruisce il progetto (compila il codice, crea i pacchetti, ecc.)
+  - **Test**: esegue i test automatici
+  - **Release**: rilascia il software (pubblica i pacchetti, anche privatamente)
+- Se ci sono errori in uno dei passaggi la pipeline fallisce e il codice non viene rilasciato
