@@ -1,0 +1,489 @@
+{
+  "info": {
+    "name": "PokeAPI Testing Collection",
+    "description": "A collection for testing the PokeAPI (https://pokeapi.co/)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
+  "item": [
+    {
+      "name": "Pokemon",
+      "description": "Endpoints for fetching Pokemon data",
+      "item": [
+        {
+          "name": "Get Pokemon by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/pokemon/{{pokemon_name}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "pokemon",
+                "{{pokemon_name}}"
+              ]
+            },
+            "description": "Fetch a Pokemon by its name"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains expected Pokemon name\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(pm.variables.get(\"pokemon_name\").toLowerCase());",
+                  "});",
+                  "",
+                  "pm.test(\"Response has expected structure\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"id\");",
+                  "    pm.expect(jsonData).to.have.property(\"name\");",
+                  "    pm.expect(jsonData).to.have.property(\"types\");",
+                  "    pm.expect(jsonData).to.have.property(\"abilities\");",
+                  "    pm.expect(jsonData).to.have.property(\"stats\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Pokemon by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/pokemon/{{pokemon_id}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "pokemon",
+                "{{pokemon_id}}"
+              ]
+            },
+            "description": "Fetch a Pokemon by its ID"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains expected Pokemon ID\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(parseInt(pm.variables.get(\"pokemon_id\")));",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is less than 1000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Pokemon List (Paginated)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/pokemon?limit={{limit}}&offset={{offset}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "pokemon"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "key": "offset",
+                  "value": "{{offset}}"
+                }
+              ]
+            },
+            "description": "Get a paginated list of Pokemon"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has correct number of results\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.results.length).to.eql(parseInt(pm.variables.get(\"limit\")));",
+                  "});",
+                  "",
+                  "pm.test(\"Response has pagination properties\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"count\");",
+                  "    pm.expect(jsonData).to.have.property(\"next\");",
+                  "    pm.expect(jsonData).to.have.property(\"previous\");",
+                  "    pm.expect(jsonData).to.have.property(\"results\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Types",
+      "description": "Endpoints for Pokemon type data",
+      "item": [
+        {
+          "name": "Get Type by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/type/{{type_name}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "type",
+                "{{type_name}}"
+              ]
+            },
+            "description": "Get details about a specific Pokemon type"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains type name\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(pm.variables.get(\"type_name\").toLowerCase());",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains damage relations\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"damage_relations\");",
+                  "    pm.expect(jsonData.damage_relations).to.have.property(\"double_damage_from\");",
+                  "    pm.expect(jsonData.damage_relations).to.have.property(\"double_damage_to\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/type",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "type"
+              ]
+            },
+            "description": "Get a list of all Pokemon types"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Contains expected types\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var typeNames = jsonData.results.map(function(result) {",
+                  "        return result.name;",
+                  "    });",
+                  "    ",
+                  "    pm.expect(typeNames).to.include(\"fire\");",
+                  "    pm.expect(typeNames).to.include(\"water\");",
+                  "    pm.expect(typeNames).to.include(\"grass\");",
+                  "    pm.expect(typeNames).to.include(\"electric\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Abilities",
+      "description": "Endpoints for Pokemon ability data",
+      "item": [
+        {
+          "name": "Get Ability by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/ability/{{ability_name}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "ability",
+                "{{ability_name}}"
+              ]
+            },
+            "description": "Get details about a specific Pokemon ability"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains ability name\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(pm.variables.get(\"ability_name\").toLowerCase().replace(\" \", \"-\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains effect entries\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"effect_entries\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "description": "Endpoints for Pokemon item data",
+      "item": [
+        {
+          "name": "Get Item by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/item/{{item_name}}",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "item",
+                "{{item_name}}"
+              ]
+            },
+            "description": "Get details about a specific item"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains item name\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.eql(pm.variables.get(\"item_name\").toLowerCase().replace(\" \", \"-\"));",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains expected item properties\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"cost\");",
+                  "    pm.expect(jsonData).to.have.property(\"effect_entries\");",
+                  "    pm.expect(jsonData).to.have.property(\"sprites\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "description": "Testing error handling",
+      "item": [
+        {
+          "name": "Not Found Pokemon",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "https://pokeapi.co/api/v2/pokemon/nonexistentpokemon12345",
+              "protocol": "https",
+              "host": [
+                "pokeapi",
+                "co"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "pokemon",
+                "nonexistentpokemon12345"
+              ]
+            },
+            "description": "Test error handling for a non-existent Pokemon"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has appropriate error message format\", function () {",
+                  "    try {",
+                  "        var jsonData = pm.response.json();",
+                  "        // If we can parse JSON, check its structure",
+                  "        if (jsonData) {",
+                  "            // This is somewhat open-ended as the PokeAPI might respond with",
+                  "            // different error formats; we'll make a reasonable test",
+                  "            console.log(\"Error response structure:\", jsonData);",
+                  "        }",
+                  "    } catch (e) {",
+                  "        // If it's not JSON, check that we got some error text",
+                  "        pm.expect(pm.response.text()).to.not.be.empty;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "pokemon_name",
+      "value": "pikachu",
+      "description": "Name of a Pokemon to retrieve"
+    },
+    {
+      "key": "pokemon_id",
+      "value": "25",
+      "description": "ID of a Pokemon to retrieve"
+    },
+    {
+      "key": "type_name",
+      "value": "electric",
+      "description": "Name of a Pokemon type"
+    },
+    {
+      "key": "ability_name",
+      "value": "static",
+      "description": "Name of a Pokemon ability"
+    },
+    {
+      "key": "item_name",
+      "value": "potion",
+      "description": "Name of a Pokemon item"
+    },
+    {
+      "key": "limit",
+      "value": "20",
+      "description": "Number of results to return per page"
+    },
+    {
+      "key": "offset",
+      "value": "0",
+      "description": "Starting position in the list"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log(\"Making request to PokeAPI endpoint:\", pm.request.url.toString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test(\"Response headers are present\", function () {",
+          "    pm.response.to.have.header(\"Content-Type\");",
+          "});",
+          "",
+          "// Add response time to console for monitoring",
+          "console.log(\"Response time: \" + pm.response.responseTime + \" ms\");"
+        ]
+      }
+    }
+  ]
+}

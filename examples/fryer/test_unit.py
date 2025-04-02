@@ -87,13 +87,18 @@ class TestFrenchFryFryer(unittest.TestCase):
         # Setup
         self.fryer.is_heating = True
         self.fryer.potatoes_loaded = True
-        # Modified to ensure temperature is high enough
-        mock_send.side_effect = lambda action, args=None: 180.0 if action == "read_temperature" else None
+        # Simula una temperatura superiore a quella target
+        def mock_read_temperature(action, args=None):
+            if action == "read_temperature":
+                return 180.0
+            return None
+        mock_send.side_effect = mock_read_temperature
         
         # Esecuzione
         self.fryer.fry(frying_time=0.1)  # Riduci il tempo per velocizzare il test
         
-        # Verifiche
+        # Verifico che sia stato chiamato send_to_fryer solo una volta con "sleep"
+        # e che il tempo di attesa sia corretto
         sleep_calls = [call for call in mock_send.call_args_list if call[0][0] == "sleep"]
         self.assertEqual(len(sleep_calls), 1)
         self.assertEqual(sleep_calls[0][0][1], {"seconds": 0.1})
@@ -209,27 +214,28 @@ class TestFrenchFryFryer(unittest.TestCase):
         self.assertEqual(len(result), 10)
         self.assertEqual(result[0], "🍟")
     
-    # @patch.object(FrenchFryFryer, 'heat_oil')
-    # @patch.object(FrenchFryFryer, 'shutdown')
-    # def test_cook_french_fries_error(self, mock_shutdown, mock_heat):
-    #     """Verifica che cook_french_fries gestisca correttamente gli errori."""
-    #     # Setup
-    #     mock_heat.side_effect = Exception("Test error")
-    #     
-    #     # Esecuzione e verifica
-    #     with self.assertRaises(Exception):
-    #         self.fryer.cook_french_fries(quantity=1.0, cooking_time=10.0)
-    #     
-    #     # Modifica: since we need the implementation to handle errors correctly,
-    #     # we'll add a try-except-finally block to the test to ensure shutdown is called
-    #     # This mimics what we'd need to change in the implementation
-    #     try:
-    #         mock_heat.side_effect = Exception("Test error")
-    #         self.fryer.cook_french_fries(quantity=1.0, cooking_time=10.0)
-    #     except Exception:
-    #         # Verifica che shutdown sia stato chiamato in caso di errore
-    #         mock_shutdown.assert_called_once()
-    #         # If this doesn't work with current implementation, you'd need to change the implementation
+    @patch.object(FrenchFryFryer, 'heat_oil')
+    @patch.object(FrenchFryFryer, 'shutdown')
+    def test_cook_french_fries_error(self, mock_shutdown, mock_heat):
+        """Verifica che cook_french_fries gestisca correttamente gli errori."""
+        # Setup
+        mock_heat.side_effect = Exception("Test error")
+        
+        # Esecuzione e verifica
+        with self.assertRaises(Exception):
+            self.fryer.cook_french_fries(quantity=1.0, cooking_time=10.0)
+        
+        # Modifica: since we need the implementation to handle errors correctly,
+        # we'll add a try-except-finally block to the test to ensure shutdown is called
+        # This mimics what we'd need to change in the implementation
+        mock_shutdown.reset_mock()  # Reset the mock to check if it's called again
+        try:
+            mock_heat.side_effect = Exception("Test error")
+            self.fryer.cook_french_fries(quantity=1.0, cooking_time=10.0)
+        except Exception:
+            # Verifica che shutdown sia stato chiamato in caso di errore
+            mock_shutdown.assert_called_once()
+            # If this doesn't work with current implementation, you'd need to change the implementation
 
 
 if __name__ == '__main__':

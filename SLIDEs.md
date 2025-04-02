@@ -226,6 +226,7 @@ def shutdown(self) -> None:
 - *Side effect* e valori di ritorno
 - Validazione dei parametri e casi limite
 - Quali funzioni vengono chiamate
+- Se le eccezioni vengono sollevate correttamente
 - Integrazione con altre parti del sistema
 
 ---
@@ -287,6 +288,18 @@ class TestFrenchFryFryer(unittest.TestCase):
         self.assertFalse(self.fryer.is_heating)
 ```
 ---
+# Mocking
+#### Come faccio a verificare che il comando di spegnimento venga inviato?
+- Devo usare un mock per la funzione `send_to_fryer`
+- Un mock è un oggetto che simula il comportamento di un altro oggetto
+- Permette di verificare se una funzione è stata chiamata e con quali argomenti
+- Utile per testare funzioni che interagiscono con il mondo esterno (API, database, ecc.)
+---
+# Mocking
+#### Come faccio a verificare che il comando di spegnimento venga inviato?
+- La libreria standard di Python per il mocking è `unittest.mock`
+- Il decoratore `@patch` permette di sostituire una funzione con un mock, il nome dell'oggetto mock viene passato come argomento al decoratore con questo formato: `posto_in_cui_viene_mockato.funzione_mockata`
+---
 ```python
 import unittest
 from unittest.mock import patch
@@ -316,3 +329,196 @@ class TestFrenchFryFryer(unittest.TestCase):
         self.fryer.shutdown()
         mock_send.assert_not_called()
 ```
+---
+# Mocking
+- Possiamo anche verificare molte altre cose:
+  - Se una funzione è stata chiamata un certo numero di volte
+  - Se una funzione è stata chiamata con argomenti specifici
+  - Se una funzione è stata chiamata in un certo ordine
+  - ...
+---
+Testiamo anche la frittura delle patatine, controllando gli errori e le chiamate al mock
+```python
+def check_temperature(self) -> float:
+    """Controlla la temperatura attuale della friggitrice."""
+    return send_to_fryer("read_temperature")
+
+def fry(self, frying_time: float = 180.0) -> None:
+    """Frigge le patatine per il tempo specificato."""
+    if not self.is_heating:
+        raise RuntimeError("Il riscaldamento non è attivo")
+        
+    if not self.potatoes_loaded:
+        raise RuntimeError("Nessuna patata caricata nella friggitrice")
+    
+    # Controlla che la temperatura sia vicina a quella target
+    current_temp = self.check_temperature()
+    if current_temp < self.target_temp * 0.9:  # 90% della temperatura target
+        raise RuntimeError(f"Temperatura troppo bassa: {current_temp:.1f}°C")
+    
+    print(f"Inizio frittura delle patatine per {frying_time} secondi")
+    send_to_fryer("sleep", {"seconds": frying_time})
+    print("Frittura completata!")
+```
+---
+```python
+@patch('main.send_to_fryer')  
+def test_fry_no_heating(self, mock_send):
+    """Verifica che fry sollevi un'eccezione quando il riscaldamento non è attivo."""
+    # Setup
+    self.fryer.is_heating = False
+    self.fryer.potatoes_loaded = True
+    
+    # Esecuzione e verifica
+    with self.assertRaises(RuntimeError):
+        self.fryer.fry()
+        
+    # Verify no calls to send_to_fryer were made
+    mock_send.assert_not_called()
+
+@patch('main.send_to_fryer')  
+def test_fry_temperature_too_low(self, mock_send):
+    """Verifica che fry sollevi un'eccezione quando la temperatura è troppo bassa."""
+    # Setup
+    self.fryer.is_heating = True
+    self.fryer.potatoes_loaded = True
+    mock_send.return_value = 100.0  # Temperatura troppo bassa
+    
+    # Esecuzione e verifica
+    with self.assertRaises(RuntimeError):
+        self.fryer.fry()
+```
+---
+```python
+@patch('main.send_to_fryer')  
+def test_fry_success(self, mock_send):
+    """Verifica che fry funzioni correttamente quando tutto è pronto."""
+    # Setup
+    self.fryer.is_heating = True
+    self.fryer.potatoes_loaded = True
+    # Simula una temperatura superiore a quella target
+    def mock_read_temperature(action, args=None):
+        if action == "read_temperature":
+            return 180.0
+        return None
+    mock_send.side_effect = mock_read_temperature
+    
+    # Esecuzione
+    self.fryer.fry(frying_time=0.1)  # Riduci il tempo per velocizzare il test
+    
+    # Verifico che sia stato chiamato send_to_fryer solo una volta con "sleep"
+    # e che il tempo di attesa sia corretto
+    sleep_calls = [call for call in mock_send.call_args_list if call[0][0] == "sleep"]
+    self.assertEqual(len(sleep_calls), 1)
+    self.assertEqual(sleep_calls[0][0][1], {"seconds": 0.1})
+```
+---
+```python
+def function(args, **kwargs):
+```
+![height:550px](assets/mock-structure-diagram.svg)
+
+---
+# Integration test
+- Testano l'integrazione tra più unità di codice
+- Verificano che le unità funzionino correttamente insieme
+- Le unità possono essere funzioni, classi o applicazioni
+- Nel nostro caso la funzione `cook_french_fries` è un buon candidato per un test di integrazione
+---
+```python
+@patch('main.send_to_fryer')
+def test_complete_frying_process(self, mock_send):
+    """
+    Test di integrazione che verifica l'intero processo di frittura
+    con una simulazione realistica delle risposte della friggitrice.
+    """
+    # Simula risposte realistiche della friggitrice
+    temperature_sequence = [25.0, 100.0, 150.0, 179.0, 182.0, 181.0]
+    current_temp_index = 0
+    
+    def mock_send_to_fryer(action, args=None):
+        nonlocal current_temp_index
+        
+        if action == "read_temperature":
+            temp = temperature_sequence[min(current_temp_index, len(temperature_sequence) - 1)]
+            current_temp_index += 1
+            return temp
+        elif action == "sleep":
+            # Non attendere realmente durante i test
+            return None
+        elif action == "heat":
+            return None
+```
+---
+```python
+    mock_send.side_effect = mock_send_to_fryer
+    
+    # Crea l'istanza della friggitrice
+    fryer = FrenchFryFryer(target_temp=180.0)
+    
+    # Esegui il processo completo
+    fries = fryer.cook_french_fries(quantity=1.0, cooking_time=3.0)
+    
+    # Verifica i risultati
+    self.assertEqual(len(fries), 10)
+    self.assertEqual(fries[0], "🍟")
+    
+    # Verifica la sequenza di chiamate alla friggitrice
+    call_actions = [call[0][0] for call in mock_send.call_args_list]
+    
+    # Verifica che le azioni principali siano state chiamate nell'ordine corretto
+    self.assertEqual(call_actions[0], "heat")  # Avvio riscaldamento
+    self.assertIn("read_temperature", call_actions)  # Controllo temperatura
+    self.assertIn("sleep", call_actions)  # Attesa durante la frittura
+    self.assertEqual(call_actions[-1], "heat")  # Spegnimento finale
+```
+---
+## E se volessi scrivere uno unit test per cook_french_fries?
+```python
+@patch.object(FrenchFryFryer, 'heat_oil')
+@patch.object(FrenchFryFryer, 'load_potatoes')
+@patch.object(FrenchFryFryer, 'fry')
+@patch.object(FrenchFryFryer, 'remove_fries')
+@patch.object(FrenchFryFryer, 'shutdown')
+def test_cook_french_fries_success(self, mock_shutdown, mock_remove, mock_fry, mock_load, mock_heat):
+    """Verifica che cook_french_fries completi correttamente l'intero processo."""
+    # Setup
+    mock_remove.return_value = ["🍟"] * 10
+    
+    # Esecuzione
+    result = self.fryer.cook_french_fries(quantity=1.0, cooking_time=10.0)
+    
+    # Verifiche
+    mock_heat.assert_called_once()
+    mock_load.assert_called_once_with(1.0)
+    mock_fry.assert_called_once_with(10.0)
+    mock_remove.assert_called_once()
+    # The shutdown is called at the end
+    mock_shutdown.assert_called_once()
+    self.assertEqual(len(result), 10)
+    self.assertEqual(result[0], "🍟")
+```
+---
+# End to end test
+- Testano l'intero sistema, dall'inizio alla fine
+- Utili per API, interfacce utente e sistemi complessi
+- In base al sistema da testare esistono più strumenti.
+- Ad esempio:
+  - Cypress per le interfacce utente
+  - Postman per le API (la maggior parte dei framework e linguaggi hanno il loro modo di fare e2e test)
+---
+# Cosa devo testare?
+- In base al progetto, alla sua complessità e alla sua importanza posso individuare quali funzioni testare
+- Non è necessario testare ogni singola funzione o casistica, ma è importante testare le parti più critiche e che più probabilmente saranno soggette a modifiche (implementative)
+- Le dinamiche di impresa influiscono su questo aspetto, il tempo da dedicare al testing viene spesso ridotto a favore di nuove funzionalità
+- In contesti collaborativi diventa più importante, il testing permette di evitare che modifiche al codice di un collega possano rompere il mio
+- È importante anche per facilitare futuri cambiamenti al codice, il testing permette di avere una base solida su cui lavorare
+---
+# Cosa devo testare?
+- Nel caso di una friggitrice è importante che non continui a scaldare l'olio se non serve in quanto è pericoloso
+- Può essere inoltre utile scrivere qualche integration test per verificare che il processo di frittura funzioni correttamente
+- Anche la funzione heat_oil è un buon candidato per uno unit test, in quanto è una funzione critica e complessa per il funzionamento della friggitrice
+---
+# Cosa devo evitare?
+- Non bisogna usare il **test coverage** (_quantità di codice testato_) come un obiettivo
+- Scrivere i test è un investimento sul futuro, ma ha un costo iniziale derivato dal tempo necessario per scriverli per cui non sempre vale la pena farlo

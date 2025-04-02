@@ -1,0 +1,55 @@
+{
+  "id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+  "name": "PokeAPI Testing Environment",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "https://pokeapi.co/api/v2",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pokemon_name",
+      "value": "pikachu",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pokemon_id",
+      "value": "25",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "type_name",
+      "value": "electric",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "ability_name",
+      "value": "static",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "item_name",
+      "value": "potion",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "limit",
+      "value": "20",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "offset",
+      "value": "0",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

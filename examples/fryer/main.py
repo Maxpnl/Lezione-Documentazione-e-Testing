@@ -90,18 +90,27 @@ class FrenchFryFryer:
     
     def cook_french_fries(self, quantity, cooking_time) -> List[str]:
         """Processo completo di frittura delle patatine."""
-        # Riscalda l'olio
-        self.heat_oil()
-        
-        # Carica le patatine
-        self.load_potatoes(quantity)
-        
-        # Friggi
-        self.fry(cooking_time)
-        
-        # Spegni la friggitrice
-        self.shutdown()
-        
-        # Rimuovi e restituisci le patatine
-        return self.remove_fries()
+        try:
+            # Riscalda l'olio
+            self.heat_oil()
+            
+            # Carica le patatine
+            self.load_potatoes(quantity)
+            
+            # Friggi
+            self.fry(cooking_time)
+            
+            # Spegni la friggitrice
+            self.shutdown()
+            # Rimuovi e restituisci le patatine
+            return self.remove_fries()
+        except Exception as e:
+            print(f"Errore durante la frittura: {e}")
+            # Spegni la friggitrice in caso di errore
+            self.shutdown()
+            raise
+        finally:
+            # Assicurati che la friggitrice venga spenta in caso di errore
+            if self.is_heating:
+                self.shutdown()
             
