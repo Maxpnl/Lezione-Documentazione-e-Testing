@@ -545,7 +545,6 @@ def calcola_sconto_cliente(id_cliente):
                   (id_cliente, datetime.now() - timedelta(days=365)))
     totale_annuale = cursor.fetchone()[0] or 0
     
-    # Logica di business mescolata con accesso ai dati
     if totale_annuale > 10000:
         sconto = 0.20  # 20% di sconto
     elif totale_annuale > 5000:
